@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>加拿大調色比對</title>
+<style>
+:root {
+  --bg: #f4f2ee; --panel: #ffffff; --ink: #1d1c1a; --muted: #6d6a64; --line: #dedad3;
+  --accent: #b5532d; --accent-ink: #ffffff; --chip: #ebe7e0; --stage: #111110;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413; --panel: #1e1d1b; --ink: #ecebe7; --muted: #9b978f; --line: #33312d;
+    --accent: #e0855e; --accent-ink: #1a1a18; --chip: #2a2926; --stage: #0b0b0a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141413; --panel: #1e1d1b; --ink: #ecebe7; --muted: #9b978f; --line: #33312d;
+  --accent: #e0855e; --accent-ink: #1a1a18; --chip: #2a2926; --stage: #0b0b0a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif; }
+button { font: inherit; color: inherit; }
+
+header { max-width: 1400px; margin: 0 auto; padding: 28px 16px 8px; }
+h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: .02em; }
+.sub { color: var(--muted); margin: 0; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1400px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tab, .chk { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+.tab .n { color: var(--muted); margin-left: 6px; font-variant-numeric: tabular-nums; }
+.tab[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tab[aria-pressed="true"] .n { color: inherit; opacity: .8; }
+.spacer { flex: 1; }
+.chk { display: inline-flex; gap: 6px; align-items: center; }
+.chk input { accent-color: var(--accent); margin: 0; }
+
+main { max-width: 1400px; margin: 0 auto; padding: 16px 16px 60px; }
+.day { margin: 22px 0 10px; font-size: 15px; color: var(--muted); font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.card { position: relative; border: 0; padding: 0; background: var(--chip); border-radius: 8px; overflow: hidden; cursor: pointer; aspect-ratio: 3 / 2; }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s; }
+.card:hover img { transform: scale(1.03); }
+.card .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 6px; font-size: 12px; color: #fff; text-align: left;
+  background: linear-gradient(transparent, rgba(0,0,0,.6)); display: flex; justify-content: space-between; gap: 6px; }
+.badge { background: rgba(255,255,255,.22); border-radius: 4px; padding: 0 5px; }
+.empty { color: var(--muted); padding: 40px 0; text-align: center; }
+
+/* viewer */
+.viewer { position: fixed; inset: 0; z-index: 20; background: var(--stage); color: #eee; display: none; flex-direction: column; }
+.viewer.open { display: flex; }
+.vtop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; }
+.vtitle { font-weight: 600; }
+.vmeta { color: #a9a59d; font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid #3a3935; border-radius: 999px; overflow: hidden; }
+.seg button { background: transparent; border: 0; padding: 6px 14px; cursor: pointer; color: #ddd; }
+.seg button[aria-pressed="true"] { background: #eee; color: #111; }
+.vbtn { background: transparent; border: 1px solid #3a3935; border-radius: 999px; padding: 6px 12px; cursor: pointer; color: #ddd; text-decoration: none; font-size: 14px; }
+.vbtn:hover, .seg button:hover { border-color: #777; }
+.stage { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; padding: 0 56px 12px; }
+.nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; border: 0; border-radius: 8px;
+  background: rgba(255,255,255,.08); color: #eee; font-size: 26px; cursor: pointer; }
+.nav:hover { background: rgba(255,255,255,.18); }
+.nav.prev { left: 6px; } .nav.next { right: 6px; }
+
+.slider { position: relative; user-select: none; touch-action: none; cursor: ew-resize; }
+.slider img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.slider .before { clip-path: inset(0 calc(100% - var(--x)) 0 0); }
+.handle { position: absolute; top: 0; bottom: 0; left: var(--x); width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.5); pointer-events: none; }
+.handle::after { content: "◀ ▶"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #111;
+  font-size: 11px; letter-spacing: 2px; padding: 8px 9px; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 6px rgba(0,0,0,.4); }
+.tag { position: absolute; top: 10px; font-size: 12px; background: rgba(0,0,0,.55); color: #fff; padding: 2px 8px; border-radius: 4px; pointer-events: none; }
+.tag.l { left: 10px; } .tag.r { right: 10px; }
+
+.pair { display: grid; gap: 8px; width: 100%; height: 100%; grid-template-columns: 1fr 1fr; }
+.pair figure { margin: 0; position: relative; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.pair img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.pair figcaption { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 12px; background: rgba(0,0,0,.55); padding: 2px 8px; border-radius: 4px; }
+@media (max-aspect-ratio: 1/1) { .pair { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+
+.hint { text-align: center; color: #8b8780; font-size: 12px; padding: 0 16px 10px; }
+.loading { position: absolute; color: #888; font-size: 13px; }
+@media (max-width: 640px) {
+  .stage { padding: 0 0 8px; }
+  .nav { display: none; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .hint .kb { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>2026 加拿大．調色前後比對</h1>
+  <p class="sub" id="sub"></p>
+</header>
+<div class="bar"><div class="bar-in" id="tabs">
+  <span class="spacer"></span>
+  <label class="chk"><input type="checkbox" id="fPeople"> 只看有我們的照片</label>
+  <label class="chk"><input type="checkbox" id="fStrong"> 只看美白明顯</label>
+</div></div>
+<main id="main"></main>
+
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="前後比對">
+  <div class="vtop">
+    <div>
+      <div class="vtitle" id="vTitle"></div>
+      <div class="vmeta" id="vMeta"></div>
+    </div>
+    <span class="spacer" style="flex:1"></span>
+    <div class="seg" role="group" aria-label="比對方式">
+      <button id="mSlider" aria-pressed="true">滑桿</button>
+      <button id="mPair" aria-pressed="false">左右並排</button>
+    </div>
+    <a class="vbtn" id="vDlBefore" download>下載調色前</a>
+    <a class="vbtn" id="vDlAfter" download>下載調色後</a>
+    <button class="vbtn" id="vClose" aria-label="關閉">✕</button>
+  </div>
+  <div class="stage" id="stage">
+    <button class="nav prev" id="vPrev" aria-label="上一張">‹</button>
+    <div id="view"></div>
+    <button class="nav next" id="vNext" aria-label="下一張">›</button>
+  </div>
+  <div class="hint"><span id="vPos"></span><span class="kb">　←／→ 換照片．M 切換比對方式．按住空白鍵看調色前．Esc 關閉</span></div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const PLACES = ['溫哥華雨天', '沿途風景', '夢蓮湖', '露易絲湖', '班夫小鎮', '極光'];
+const STYLE = { '1': '雨天電影感', '2': '鮮明旅遊感', '3': '金色晨光', '4': '夢幻極光' };
+const FOLDER = { '1': '1_溫哥華雨天_雨天電影感', '2': '2_風景與班夫_鮮明旅遊感', '3': '3_夢蓮湖日出_金色晨光', '4': '4_極光_夢幻極光' };
+const ALL = window.PHOTOS || [];
+const V = '?v=' + (window.PHOTOS_V || 0);
+// online copy: images come from the photo bucket (PHOTO_BASE is set in its data.js); locally they come from the folders
+const BASE = window.PHOTO_BASE || '';
+const U = BASE ? {
+  thumb: p => `${BASE}/thumb/${p.n}.jpg${V}`,
+  before: p => `${BASE}/web/before/${p.n}.jpg${V}`,
+  after: p => `${BASE}/web/after/${p.n}.jpg${V}`,
+  fullBefore: p => `${BASE}/full/before/${p.n}.jpg?download=${encodeURIComponent(p.n + '_調色前.jpg')}`,
+  fullAfter: p => `${BASE}/full/after/${p.n}.jpg?download=${encodeURIComponent(p.n + '_調色後.jpg')}`,
+} : {
+  thumb: p => `_網頁/thumb/${p.n}.jpg${V}`,
+  before: p => `_網頁/before/${p.n}.jpg${V}`,
+  after: p => `_網頁/after/${p.n}.jpg${V}`,
+  fullBefore: p => `../${p.n}.JPG`,
+  fullAfter: p => `${FOLDER[p.c]}/${p.n}.jpg`,
+};
+// the camera clock was on Taiwan time (+08:00): show local time, Vancouver UTC-7, Rockies and Yellowknife UTC-6
+ALL.forEach(p => {
+  const [mo, d, hh, mm] = p.t.split(/[\/ :]/).map(Number);
+  const t = new Date(Date.UTC(2026, mo - 1, d, hh, mm) - (p.c === '1' ? 15 : 14) * 3600e3);
+  const z = n => String(n).padStart(2, '0');
+  p.t = `${z(t.getUTCMonth() + 1)}/${z(t.getUTCDate())} ${z(t.getUTCHours())}:${z(t.getUTCMinutes())}`;
+});
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+let cat = PLACES.includes(store.get('cat')) ? store.get('cat') : 'all', list = [], idx = -1, mode = store.get('mode') || 'slider', pos = 50;
+const $ = id => document.getElementById(id);
+
+$('sub').textContent = ALL.length
+  ? `共 ${ALL.length} 張調色照片。點任一張照片看調色前後，也可以下載原尺寸照片。`
+  : '找不到照片資料（_網頁/data.js），請先執行 make_web.py。';
+if (BASE) $('fStrong').closest('label').remove();  // grading detail, only useful locally
+
+// tabs
+const tabs = $('tabs'), spacer = tabs.querySelector('.spacer');
+[['all', '全部'], ...PLACES.map(p => [p, p])].forEach(([k, label]) => {
+  const b = document.createElement('button');
+  b.className = 'tab'; b.dataset.cat = k;
+  b.innerHTML = `${label}<span class="n">${k === 'all' ? ALL.length : ALL.filter(p => p.pl === k).length}</span>`;
+  b.onclick = () => { cat = k; store.set('cat', k); render(); };
+  tabs.insertBefore(b, spacer);
+});
+$('fPeople').onchange = render;
+if (!BASE) $('fStrong').onchange = render;
+
+function render() {
+  tabs.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === cat));
+  list = ALL.filter(p => (cat === 'all' || p.pl === cat)
+    && (!$('fPeople').checked || p.p > 0) && (BASE || !$('fStrong').checked || p.k === '明顯'));
+  const main = $('main'); main.innerHTML = '';
+  if (!list.length) { main.innerHTML = '<div class="empty">沒有符合的照片</div>'; return; }
+  let day = null, grid;
+  list.forEach((p, i) => {
+    const d = p.t.slice(0, 5);
+    if (d !== day) {
+      day = d;
+      const h = document.createElement('div'); h.className = 'day';
+      h.textContent = `${+d.slice(0, 2)} 月 ${+d.slice(3)} 日`;
+      grid = document.createElement('div'); grid.className = 'grid';
+      main.append(h, grid);
+    }
+    const b = document.createElement('button'); b.className = 'card';
+    b.innerHTML = `<img loading="lazy" decoding="async" src="${U.thumb(p)}" alt="${p.n}"
+      onerror="this.onerror=null; this.src='${U.after(p)}'">
+      <span class="cap"><span>${p.n.replace('CAN', '')}　${p.t.slice(6)}</span>${!BASE && p.k === '明顯' ? '<span class="badge">美白明顯</span>' : ''}</span>`;
+    b.onclick = () => open(i);
+    grid.append(b);
+  });
+}
+
+// viewer
+const viewer = $('viewer'), view = $('view'), stage = $('stage');
+function open(i) {
+  idx = (i + list.length) % list.length;
+  const p = list[idx];
+  viewer.classList.add('open'); document.body.style.overflow = 'hidden';
+  $('vTitle').textContent = p.n;
+  const meta = [`${p.pl}・${STYLE[p.c]}`, `${+p.t.slice(0, 2)} 月 ${+p.t.slice(3, 5)} 日 ${p.t.slice(6)}`];
+  if (p.k && !BASE) meta.push(`美白${p.k}`);
+  if (p.g > 1) meta.push(`${p.g} 張相似裡最清楚的一張`);
+  $('vMeta').textContent = meta.join('　');
+  $('vPos').textContent = `${idx + 1} / ${list.length}`;
+  $('vDlBefore').href = U.fullBefore(p); $('vDlBefore').setAttribute('download', `${p.n}_調色前.jpg`);
+  $('vDlAfter').href = U.fullAfter(p); $('vDlAfter').setAttribute('download', `${p.n}_調色後.jpg`);
+  draw();
+  [1, -1].forEach(d => { const q = list[(idx + d + list.length) % list.length];
+    new Image().src = U.after(q); new Image().src = U.before(q); });
+}
+function close() { viewer.classList.remove('open'); document.body.style.overflow = ''; view.innerHTML = ''; }
+
+function draw() {
+  const p = list[idx], a = U.after(p), b = U.before(p);
+  $('mSlider').setAttribute('aria-pressed', mode === 'slider');
+  $('mPair').setAttribute('aria-pressed', mode === 'pair');
+  if (mode === 'pair') {
+    view.style.cssText = 'width:100%;height:100%';
+    view.innerHTML = `<div class="pair"><figure><img src="${b}" alt="調色前"><figcaption>調色前</figcaption></figure>
+      <figure><img src="${a}" alt="調色後"><figcaption>調色後</figcaption></figure></div>`;
+    return;
+  }
+  view.style.cssText = '';
+  view.innerHTML = `<div class="slider" id="sl" style="--x:${pos}%"><span class="loading">載入中…</span>
+    <img class="after" src="${a}" alt="調色後"><img class="before" src="${b}" alt="調色前">
+    <div class="handle"></div><span class="tag l">調色前</span><span class="tag r">調色後</span></div>`;
+  const sl = $('sl'), img = sl.querySelector('.after');
+  const fit = () => {
+    if (!img.naturalWidth) return;
+    const r = img.naturalWidth / img.naturalHeight, cs = getComputedStyle(stage);
+    const W = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const H = stage.clientHeight - parseFloat(cs.paddingBottom);
+    const w = Math.min(W, H * r);
+    sl.style.width = w + 'px'; sl.style.height = w / r + 'px';
+    sl.querySelector('.loading')?.remove();
+  };
+  img.complete ? fit() : (img.onload = fit);
+  sl.onpointerdown = e => {
+    sl.setPointerCapture(e.pointerId);
+    const move = ev => { const r = sl.getBoundingClientRect();
+      pos = Math.max(0, Math.min(100, (ev.clientX - r.left) / r.width * 100)); sl.style.setProperty('--x', pos + '%'); };
+    move(e); sl.onpointermove = move;
+    sl.onpointerup = sl.onpointercancel = () => { sl.onpointermove = null; };
+  };
+  sl.ondblclick = () => { pos = 50; sl.style.setProperty('--x', '50%'); };
+}
+function setMode(m) { mode = m; store.set('mode', m); draw(); }
+$('mSlider').onclick = () => setMode('slider');
+$('mPair').onclick = () => setMode('pair');
+$('vPrev').onclick = () => open(idx - 1);
+$('vNext').onclick = () => open(idx + 1);
+$('vClose').onclick = close;
+addEventListener('resize', () => { if (viewer.classList.contains('open') && mode === 'slider') draw(); });
+
+let held = null;
+addEventListener('keydown', e => {
+  if (!viewer.classList.contains('open')) return;
+  if (e.key === 'Escape') close();
+  else if (e.key === 'ArrowLeft') open(idx - 1);
+  else if (e.key === 'ArrowRight') open(idx + 1);
+  else if (e.key === 'm' || e.key === 'M') setMode(mode === 'slider' ? 'pair' : 'slider');
+  else if (e.key === ' ' && mode === 'slider') {
+    e.preventDefault();
+    if (held === null) { held = pos; pos = 100; $('sl')?.style.setProperty('--x', '100%'); }
+  }
+});
+addEventListener('keyup', e => {
+  if (e.key === ' ' && held !== null) { pos = held; held = null; $('sl')?.style.setProperty('--x', pos + '%'); }
+});
+
+// swipe between photos in side-by-side mode on touch screens
+let tx = null;
+stage.addEventListener('touchstart', e => { tx = mode === 'pair' ? e.touches[0].clientX : null; }, { passive: true });
+stage.addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 60) open(idx + (dx < 0 ? 1 : -1));
+  tx = null;
+});
+
+render();
+</script>
+</body>
+</html>
